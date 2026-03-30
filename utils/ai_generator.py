@@ -38,37 +38,31 @@ def generate_mcq(topic, num_questions):
             seed = random.randint(1, 100000)
 
             prompt = f"""
-            Seed: {seed}
+                Return ONLY VALID JSON.
 
-            Return ONLY JSON.
+                STRICT RULES:
+                1. Each question must have EXACTLY one correct answer.
+                2. The "answer" MUST match one of the given options EXACTLY.
+                3. The "explanation" MUST correspond to the correct answer.
+                4. Do NOT mismatch explanation and answer.
+                5. Do NOT include "User content" text.
 
-            IMPORTANT:
-            - Generate DIFFERENT questions every time
-            - Avoid repeating questions
-            - Follow difficulty strictly
-
-            Topic: {topic}
-
-            RULES:
-            EASY → simple definition-based questions
-            MEDIUM → concept + application questions
-            HARD → tricky + analytical questions
-
-            Generate EXACTLY {current_batch} MCQs.
-
-            Format:
-            {{
-              "theory": "clean explanation of topic",
-              "questions": [
+                Format:
                 {{
-                  "question": "...",
-                  "options": ["Option A", "Option B", "Option C", "Option D"],
-                  "answer": "Option A",
-                  "explanation": "..."
+                "theory": "...",
+                "questions": [
+                    {{
+                    "question": "...",
+                    "options": ["A", "B", "C", "D"],
+                    "answer": "exact option text",
+                    "explanation": "must match correct answer"
+                    }}
+                ]
                 }}
-              ]
-            }}
-            """
+
+                Topic: {topic}
+                Generate EXACTLY {current_batch} questions.
+                """
 
             try:
                 response = client.chat.completions.create(

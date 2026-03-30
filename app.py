@@ -89,7 +89,6 @@ def generate():
         time_limit=time_limit
     )
 
-# 🔹 Submit Quiz + Save History
 @app.route('/submit', methods=['POST'])
 def submit():
     try:
@@ -99,34 +98,37 @@ def submit():
         score = 0
         results = []
 
+        def clean(text):
+            return (text or "").strip().lower()
+
         for i in range(total):
-            answers = request.form.getlist(f"q{i}")
-            user_ans = answers[-1] if answers else "Not Attempted"
-            correct_ans = request.form.get(f"correct{i}", "")
+
+            user_ans = request.form.get(f"q{i}")
+            correct_ans = request.form.get(f"correct{i}", "").strip()
             explanation = request.form.get(f"explanation{i}", "")
 
+            # 🔥 HANDLE NOT ATTEMPTED FIRST
             if not user_ans:
-                user_ans = "Not Attempted"
-
-            # 🔥 NORMALIZATION FIX
-            user_clean = (user_ans or "").strip().lower()
-            correct_clean = (correct_ans or "").strip().lower()
-
-            if user_clean == correct_clean:
-                score += 1
-                status = "Correct"
+                user_ans_display = "Not Attempted"
+                status = "Wrong"   # ALWAYS WRONG
             else:
-                status = "Wrong"
+                user_ans_display = user_ans.strip()
+
+                # 🔥 SAFE COMPARISON
+                if user_ans_display.lower() == correct_ans.lower():
+                    score += 1
+                    status = "Correct"
+                else:
+                    status = "Wrong"
 
             results.append({
                 "question_no": i + 1,
-                "user_ans": user_ans,
+                "user_ans": user_ans_display,
                 "correct_ans": correct_ans,
                 "status": status,
                 "explanation": explanation
             })
-
-        # 🔥 SAVE TO DB SAFE
+        # SAVE
         try:
             quiz = QuizHistory(topic=topic, score=score, total=total)
             db.session.add(quiz)
@@ -143,8 +145,8 @@ def submit():
 
     except Exception as e:
         print("❌ SUBMIT ERROR:", e)
-        return f"<h2>Submit Error:</h2><p>{str(e)}</p>"
-
+        return f"<h2>Error:</h2><p>{str(e)}</p>"
+    
 # 🔹 History Page
 @app.route('/history')
 def history():

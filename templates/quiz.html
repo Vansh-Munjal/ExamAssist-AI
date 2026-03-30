@@ -417,8 +417,9 @@
         <div class="q-text">{{ q.question }}</div>
 
         <input type="hidden" name="question{{ q_index }}" value="{{ q.question }}">
-        <input type="hidden" name="correct{{ q_index }}"  value="{{ q.answer }}">
+    
         <input type="hidden" name="explanation{{ q_index }}" value="{{ q.explanation or 'No explanation available' }}">
+        <input type="hidden" name="correct{{ q_index }}" value="{{ q.answer }}">
         
 
         <div class="options" id="opts-{{ q_index }}">
