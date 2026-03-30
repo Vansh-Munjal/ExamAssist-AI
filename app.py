@@ -96,7 +96,8 @@ def submit():
         results = []
 
         for i in range(total):
-            user_ans = request.form.get(f"q{i}")
+            answers = request.form.getlist(f"q{i}")
+            user_ans = answers[-1] if answers else "Not Attempted"
             correct_ans = request.form.get(f"correct{i}", "")
             explanation = request.form.get(f"explanation{i}", "")
 
