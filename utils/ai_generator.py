@@ -22,7 +22,6 @@ def generate_mcq(topic, num_questions):
 
         remaining = num_questions - len(all_questions)
 
-        # Avoid tiny unstable batches
         if remaining <= 3:
             current_batch = remaining
         else:
@@ -34,9 +33,6 @@ def generate_mcq(topic, num_questions):
         while not success and attempts < 3:
             attempts += 1
 
-            # 🔥 Random seed (for variation)
-            seed = random.randint(1, 100000)
-
             prompt = f"""
             Return ONLY VALID JSON.
 
@@ -44,7 +40,7 @@ def generate_mcq(topic, num_questions):
             1. Each question must have EXACTLY one correct answer.
             2. The correct answer MUST be factually correct.
             3. The answer MUST EXACTLY match one of the options.
-            4. The explanation MUST match the correct answer.
+            4. The explanation MUST support the correct answer.
             5. Do NOT contradict yourself.
 
             Format:
@@ -63,6 +59,7 @@ def generate_mcq(topic, num_questions):
             Topic: {topic}
             Generate EXACTLY {current_batch} questions.
             """
+
             try:
                 response = client.chat.completions.create(
                     model="llama-3.1-8b-instant",
@@ -73,7 +70,7 @@ def generate_mcq(topic, num_questions):
 
                 content = response.choices[0].message.content
 
-                # 🔥 Remove markdown
+                # 🔥 Clean markdown
                 content = content.replace("```json", "").replace("```", "")
 
                 match = re.search(r'\{.*\}', content, re.DOTALL)
@@ -82,55 +79,34 @@ def generate_mcq(topic, num_questions):
 
                 data = json.loads(match.group())
 
-                # ✅ ADD THIS BLOCK HERE
-                for q in data.get("questions", []):
+                questions = data.get("questions", [])
+
+                for q in questions:
 
                     options = q.get("options", [])
-                    answer = q.get("answer", "")
-                    explanation = q.get("explanation", "").lower()
+                    answer = q.get("answer", "").strip()
+                    explanation = q.get("explanation", "").strip()
 
-                    # 🔥 Fix invalid answer
-                    if answer not in options and options:
-                        q["answer"] = options[0]
+                    # 🔥 Fix answer mapping
 
-                    # 🔥 Fix mismatch
-                    if answer and explanation and answer.lower() not in explanation:
-                        q["explanation"] = f"{answer} is the correct answer."
-
-                # 👇 THIS SHOULD COME AFTER
-                all_questions.extend(data.get("questions", []))
-
-                # Store theory once
-                if not theory:
-                    theory = data.get("theory", "")
-
-                # Clean bad theory
-                if "User content:" in theory or "Difficulty:" in theory:
-                    theory = "This topic covers important concepts. Study definitions, examples, and applications."
-
-                # 🔥 FIX ANSWERS
-                for q in data.get("questions", []):
-
-                    options = q.get("options", [])
-
-                    # 🔥 Case 1: A/B/C/D
-                    if q.get("answer") in ["A", "B", "C", "D"]:
-                        idx = ["A", "B", "C", "D"].index(q["answer"])
+                    # Case 1: A/B/C/D
+                    if answer in ["A", "B", "C", "D"]:
+                        idx = ["A", "B", "C", "D"].index(answer)
                         if idx < len(options):
                             q["answer"] = options[idx]
 
-                    # 🔥 Case 2: "Option A", "Answer: B"
-                    elif isinstance(q.get("answer"), str):
-                        ans = q["answer"].strip().upper()
+                    # Case 2: "Option A", "Answer: B"
+                    elif isinstance(answer, str):
+                        ans = answer.upper().strip()
 
                         for letter in ["A", "B", "C", "D"]:
-                            if letter in ans:
+                            if ans == letter or ans.endswith(f": {letter}") or ans.endswith(letter):
                                 idx = ["A", "B", "C", "D"].index(letter)
                                 if idx < len(options):
                                     q["answer"] = options[idx]
                                 break
 
-                    # 🔥 Case 3: numeric correct_answer
+                    # Case 3: numeric index
                     if "correct_answer" in q:
                         try:
                             idx = int(q["correct_answer"]) - 1
@@ -139,29 +115,41 @@ def generate_mcq(topic, num_questions):
                         except:
                             pass
 
-                    # 🔥 FINAL SAFETY
+                    # 🔥 FINAL SAFETY: ensure answer is valid
                     if q.get("answer") not in options and options:
                         q["answer"] = options[0]
 
-                    # Ensure explanation exists
-                    if "explanation" not in q:
-                        q["explanation"] = "No explanation provided."
+                    # 🔥 Explanation fix
+                    if not explanation:
+                        q["explanation"] = f"{q['answer']} is the correct answer."
+                    else:
+                        # Only fix if completely unrelated
+                        if q["answer"].lower() not in explanation.lower():
+                            q["explanation"] = f"{q['answer']} is the correct answer."
 
-                all_questions.extend(data.get("questions", []))
+                # ✅ ADD QUESTIONS ONLY ONCE (FIXED)
+                all_questions.extend(questions)
+
+                # Store theory once
+                if not theory:
+                    theory = data.get("theory", "")
+
+                # Clean bad theory
+                if not theory or "User content:" in theory:
+                    theory = "This topic covers important concepts. Study definitions, examples, and applications."
 
                 success = True
 
             except Exception as e:
                 print(f"Retry {attempts} failed:", e)
 
-                # Try smaller batch if failing
                 if attempts == 2 and current_batch > 2:
                     current_batch = current_batch // 2
 
-    # 🔥 Shuffle questions for randomness
+    # 🔥 Shuffle questions
     random.shuffle(all_questions)
 
-    # Final safety check
+    # Final safety
     if len(all_questions) < num_questions:
         print("⚠️ Could not generate full questions")
 

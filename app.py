@@ -107,19 +107,21 @@ def submit():
             correct_ans = request.form.get(f"correct{i}", "").strip()
             explanation = request.form.get(f"explanation{i}", "")
 
-            # 🔥 HANDLE NOT ATTEMPTED FIRST
-            if not user_ans:
-                user_ans_display = "Not Attempted"
-                status = "Wrong"   # ALWAYS WRONG
-            else:
-                user_ans_display = user_ans.strip()
+            # Normalize
+            user_clean = (user_ans or "").strip().lower()
+            correct_clean = correct_ans.strip().lower()
 
-                # 🔥 SAFE COMPARISON
-                if user_ans_display.lower() == correct_ans.lower():
-                    score += 1
-                    status = "Correct"
-                else:
-                    status = "Wrong"
+            # 🔥 FIXED LOGIC
+            if not user_clean:
+                user_ans_display = "Not Attempted"
+                status = "Not Attempted"   # ✅ IMPORTANT CHANGE
+            elif user_clean == correct_clean:
+                user_ans_display = user_ans
+                status = "Correct"
+                score += 1
+            else:
+                user_ans_display = user_ans
+                status = "Wrong"
 
             results.append({
                 "question_no": i + 1,
