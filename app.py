@@ -10,6 +10,8 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///examassist.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+with app.app_context():
+    db.create_all()
 
 # 🔹 Model (History Table)
 class QuizHistory(db.Model):
@@ -144,22 +146,30 @@ def submit():
 # 🔹 History Page
 @app.route('/history')
 def history():
-    data = QuizHistory.query.all()
+    try:
+        print("🔥 History route hit")
 
-    total_quizzes = len(data)
-    total_score = sum([q.score for q in data])
-    total_questions = sum([q.total for q in data])
+        data = QuizHistory.query.all()
 
-    avg_score = round(total_score / total_quizzes, 2) if total_quizzes > 0 else 0
-    best_score = max([q.score for q in data], default=0)
+        print("Data fetched:", data)
 
-    return render_template(
-        'history.html',
-        data=data,
-        total_quizzes=total_quizzes,
-        avg_score=avg_score,
-        best_score=best_score
-    )
+        total_quizzes = len(data)
+        total_score = sum(q.score for q in data)
+
+        avg_score = round(total_score / total_quizzes, 2) if total_quizzes > 0 else 0
+        best_score = max((q.score for q in data), default=0)
+
+        return render_template(
+            'history.html',
+            data=data,
+            total_quizzes=total_quizzes,
+            avg_score=avg_score,
+            best_score=best_score
+        )
+
+    except Exception as e:
+        print("❌ HISTORY ERROR:", e)
+        return f"<h2>History Error:</h2><p>{str(e)}</p>"
     
 @app.route('/delete/<int:id>')
 def delete(id):
