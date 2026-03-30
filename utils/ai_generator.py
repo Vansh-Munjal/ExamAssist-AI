@@ -38,32 +38,31 @@ def generate_mcq(topic, num_questions):
             seed = random.randint(1, 100000)
 
             prompt = f"""
-                Return ONLY VALID JSON.
+            Return ONLY VALID JSON.
 
-                STRICT RULES:
-                1. Each question must have EXACTLY one correct answer.
-                2. The "answer" MUST match one of the given options EXACTLY.
-                3. The "explanation" MUST correspond to the correct answer.
-                4. Do NOT mismatch explanation and answer.
-                5. Do NOT include "User content" text.
+            STRICT RULES:
+            1. Each question must have EXACTLY one correct answer.
+            2. The correct answer MUST be factually correct.
+            3. The answer MUST EXACTLY match one of the options.
+            4. The explanation MUST match the correct answer.
+            5. Do NOT contradict yourself.
 
-                Format:
+            Format:
+            {{
+            "theory": "...",
+            "questions": [
                 {{
-                "theory": "...",
-                "questions": [
-                    {{
-                    "question": "...",
-                    "options": ["A", "B", "C", "D"],
-                    "answer": "exact option text",
-                    "explanation": "must match correct answer"
-                    }}
-                ]
+                "question": "...",
+                "options": ["A", "B", "C", "D"],
+                "answer": "exact option text",
+                "explanation": "must support the correct answer"
                 }}
+            ]
+            }}
 
-                Topic: {topic}
-                Generate EXACTLY {current_batch} questions.
-                """
-
+            Topic: {topic}
+            Generate EXACTLY {current_batch} questions.
+            """
             try:
                 response = client.chat.completions.create(
                     model="llama-3.1-8b-instant",
@@ -82,6 +81,24 @@ def generate_mcq(topic, num_questions):
                     raise Exception("No JSON found")
 
                 data = json.loads(match.group())
+
+                # ✅ ADD THIS BLOCK HERE
+                for q in data.get("questions", []):
+
+                    options = q.get("options", [])
+                    answer = q.get("answer", "")
+                    explanation = q.get("explanation", "").lower()
+
+                    # 🔥 Fix invalid answer
+                    if answer not in options and options:
+                        q["answer"] = options[0]
+
+                    # 🔥 Fix mismatch
+                    if answer and explanation and answer.lower() not in explanation:
+                        q["explanation"] = f"{answer} is the correct answer."
+
+                # 👇 THIS SHOULD COME AFTER
+                all_questions.extend(data.get("questions", []))
 
                 # Store theory once
                 if not theory:
