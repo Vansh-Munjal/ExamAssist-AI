@@ -88,40 +88,53 @@ def generate():
 # 🔹 Submit Quiz + Save History
 @app.route('/submit', methods=['POST'])
 def submit():
-    topic = request.form['topic']
-    total = int(request.form['total'])
+    try:
+        topic = request.form.get('topic', 'Quiz')
+        total = int(request.form.get('total', 0))
 
-    score = 0
-    results = []
+        score = 0
+        results = []
 
-    for i in range(total):
-        user_ans = request.form.get(f"q{i}")
-        correct_ans = request.form.get(f"correct{i}")
-        explanation = request.form.get(f"explanation{i}")
+        for i in range(total):
+            user_ans = request.form.get(f"q{i}")
+            correct_ans = request.form.get(f"correct{i}", "")
+            explanation = request.form.get(f"explanation{i}", "")
 
-        if user_ans == correct_ans:
-            score += 1
-            status = "Correct"
-        else:
-            status = "Wrong"
+            if not user_ans:
+                user_ans = "Not Attempted"
 
-        question_text = request.form.get(f"question{i}")   # 👈 NEW LINE
+            if user_ans == correct_ans:
+                score += 1
+                status = "Correct"
+            else:
+                status = "Wrong"
 
-        results.append({
-            "question_no": i + 1,
-            "question": question_text,   # 👈 ADD THIS
-            "user_ans": user_ans,
-            "correct_ans": correct_ans,
-            "status": status,
-            "explanation": explanation
-        })
+            results.append({
+                "question_no": i + 1,
+                "user_ans": user_ans,
+                "correct_ans": correct_ans,
+                "status": status,
+                "explanation": explanation
+            })
 
-    # 🔹 Save to Database
-    quiz = QuizHistory(topic=topic, score=score, total=total)
-    db.session.add(quiz)
-    db.session.commit()
+        # 🔥 SAVE TO DB SAFE
+        try:
+            quiz = QuizHistory(topic=topic, score=score, total=total)
+            db.session.add(quiz)
+            db.session.commit()
+        except Exception as db_error:
+            print("DB Error:", db_error)
 
-    return render_template('result.html', score=score, total=total, results=results)
+        return render_template(
+            'result.html',
+            score=score,
+            total=total,
+            results=results
+        )
+
+    except Exception as e:
+        print("❌ SUBMIT ERROR:", e)
+        return f"<h2>Submit Error:</h2><p>{str(e)}</p>"
 
 # 🔹 History Page
 @app.route('/history')

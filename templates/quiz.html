@@ -418,12 +418,13 @@
 
         <input type="hidden" name="question{{ q_index }}" value="{{ q.question }}">
         <input type="hidden" name="correct{{ q_index }}"  value="{{ q.answer }}">
-        <input type="hidden" name="explanation{{ q_index }}" value="{{ q.explanation }}">
+        <input type="hidden" name="explanation{{ q_index }}" value="{{ q.explanation or 'No explanation available' }}">
+        
 
         <div class="options" id="opts-{{ q_index }}">
           {% for opt in q.options %}
           <label class="option-label" onclick="selectOption(this, {{ q_index }})">
-            <input type="radio" name="q{{ q_index }}" value="{{ opt }}" required>
+            <input type="radio" name="q{{ q_index }}" value="{{ opt }}" >
             <div class="option-circle"><div class="option-dot"></div></div>
             <span class="option-text">{{ opt }}</span>
           </label>
