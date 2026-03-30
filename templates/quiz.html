@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ExamAssist AI – Quiz</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #060b18;
+    --surface: #0d1627;
+    --surface2: #111d35;
+    --border: rgba(56,189,248,0.12);
+    --accent: #38bdf8;
+    --accent2: #818cf8;
+    --accent3: #f472b6;
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --success: #4ade80;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(56,189,248,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(56,189,248,0.03) 1px, transparent 1px);
+    background-size: 48px 48px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* Orbs */
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.12;
+    pointer-events: none;
+    z-index: 0;
+  }
+  .orb1 { width: 500px; height: 500px; background: var(--accent); top: -150px; left: -150px; }
+  .orb2 { width: 350px; height: 350px; background: var(--accent2); bottom: -100px; right: -100px; }
+
+  /* Nav */
+  nav {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 18px 40px;
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(12px);
+    background: rgba(6,11,24,0.7);
+  }
+  nav a {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+  }
+  nav a:hover {
+    color: var(--accent);
+    border-color: var(--border);
+    background: rgba(56,189,248,0.06);
+  }
+  nav .sep { color: var(--muted); }
+
+  /* Timer bar */
+  .timer-bar {
+    position: sticky;
+    top: 0;
+    z-index: 20;
+    background: rgba(6,11,24,0.85);
+    backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 40px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+  }
+
+  .timer-display {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Syne', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .timer-display .icon { font-size: 20px; }
+  .timer-count {
+    color: var(--accent);
+    transition: color 0.3s;
+    min-width: 60px;
+  }
+  .timer-count.warning { color: #fbbf24; }
+  .timer-count.danger  { color: #f87171; animation: blink 0.6s ease infinite; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  .timer-track {
+    flex: 1;
+    height: 4px;
+    background: rgba(56,189,248,0.1);
+    border-radius: 4px;
+    overflow: hidden;
+    max-width: 400px;
+  }
+  .timer-fill {
+    height: 100%;
+    width: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 4px;
+    transition: width 1s linear, background 0.5s;
+    transform-origin: left;
+  }
+
+  /* Progress indicator */
+  .progress-info {
+    font-size: 13px;
+    color: var(--muted);
+    white-space: nowrap;
+  }
+  .progress-info strong { color: var(--text); }
+
+  /* Main layout */
+  main {
+    position: relative;
+    z-index: 5;
+    max-width: 780px;
+    margin: 0 auto;
+    padding: 48px 24px 80px;
+  }
+
+  /* Theory section */
+  .theory-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 32px;
+    margin-bottom: 40px;
+    position: relative;
+    overflow: hidden;
+    animation: fadeUp 0.5s ease both;
+  }
+  .theory-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(56,189,248,0.35), transparent);
+  }
+  .theory-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+  .theory-label .dot {
+    width: 6px; height: 6px;
+    background: var(--accent);
+    border-radius: 50%;
+  }
+  .theory-text {
+    font-size: 14.5px;
+    line-height: 1.75;
+    color: #cbd5e1;
+  }
+
+  /* Questions */
+  .questions-header {
+    display: flex;
+    align-items: baseline;
+    gap: 14px;
+    margin-bottom: 28px;
+    animation: fadeUp 0.5s 0.1s ease both;
+  }
+  .questions-header h2 {
+    font-family: 'Syne', sans-serif;
+    font-size: 1.6rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--text) 30%, var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .q-count {
+    font-size: 13px;
+    color: var(--muted);
+    background: rgba(56,189,248,0.07);
+    border: 1px solid var(--border);
+    padding: 3px 10px;
+    border-radius: 20px;
+  }
+
+  /* Question card */
+  .q-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 28px;
+    margin-bottom: 16px;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    animation: fadeUp 0.5s ease both;
+    position: relative;
+    overflow: hidden;
+  }
+  .q-card:hover {
+    border-color: rgba(56,189,248,0.25);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+  }
+  .q-card.answered {
+    border-color: rgba(56,189,248,0.22);
+    background: linear-gradient(135deg, var(--surface) 80%, rgba(56,189,248,0.04));
+  }
+
+  .q-number {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px; height: 28px;
+    background: rgba(56,189,248,0.1);
+    border: 1px solid rgba(56,189,248,0.2);
+    border-radius: 8px;
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 12px;
+  }
+
+  .q-text {
+    font-size: 15px;
+    font-weight: 500;
+    line-height: 1.6;
+    color: var(--text);
+    margin-bottom: 20px;
+  }
+
+  /* Options */
+  .options { display: flex; flex-direction: column; gap: 10px; }
+
+  .option-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.18s;
+    background: rgba(255,255,255,0.02);
+    user-select: none;
+  }
+  .option-label:hover {
+    border-color: rgba(56,189,248,0.35);
+    background: rgba(56,189,248,0.05);
+  }
+  .option-label input[type="radio"] { display: none; }
+
+  .option-label.selected {
+    border-color: var(--accent);
+    background: rgba(56,189,248,0.08);
+    color: var(--accent);
+  }
+
+  .option-circle {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.18s;
+  }
+  .option-label.selected .option-circle {
+    border-color: var(--accent);
+    background: var(--accent);
+  }
+  .option-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: #060b18;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .option-label.selected .option-dot { opacity: 1; }
+
+  .option-text { font-size: 14px; line-height: 1.5; }
+
+  /* Submit section */
+  .submit-section {
+    margin-top: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    animation: fadeUp 0.5s 0.3s ease both;
+    flex-wrap: wrap;
+  }
+  .answered-count {
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .answered-count strong { color: var(--success); }
+
+  .submit-btn {
+    padding: 14px 36px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    border: none;
+    border-radius: 12px;
+    color: #060b18;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.25s;
+    letter-spacing: 0.02em;
+    position: relative;
+    overflow: hidden;
+  }
+  .submit-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(56,189,248,0.35);
+  }
+  .submit-btn:hover::before { opacity: 1; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+</style>
+</head>
+<body>
+
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+
+<nav>
+  <a href="/">Home</a>
+  <span class="sep">·</span>
+  <a href="/history">History</a>
+</nav>
+
+<!-- Sticky timer bar -->
+<div class="timer-bar">
+  <div class="timer-display">
+    <span class="icon">⏱️</span>
+    <span>Time Left:</span>
+    <span class="timer-count" id="timer">{{ time_limit }}</span>
+    <span style="color:var(--muted);font-size:14px;font-weight:400">sec</span>
+  </div>
+  <div class="timer-track">
+    <div class="timer-fill" id="timer-fill"></div>
+  </div>
+  <div class="progress-info" id="progress-info">
+    <strong>0</strong> / {{ data.questions|length }} answered
+  </div>
+</div>
+
+<main>
+
+  <!-- Theory -->
+  {% if data.theory and "User content" not in data.theory %}
+  <div class="theory-card">
+    <div class="theory-label"><div class="dot"></div> Quick Theory</div>
+    <div class="theory-text">{{ data.theory }}</div>
+  </div>
+  {% endif %}
+
+  <!-- Quiz form -->
+  <div class="questions-header">
+    <h2>Quiz</h2>
+    <span class="q-count">{{ data.questions|length }} questions</span>
+  </div>
+
+  <form action="/submit" method="post" id="quiz-form">
+    <input type="hidden" name="topic" value="{{ topic }}">
+    <input type="hidden" name="total" value="{{ data.questions|length }}">
+
+    {% for q in data.questions %}
+      {% set q_index = loop.index0 %}
+      <div class="q-card" id="qcard-{{ q_index }}" style="animation-delay: {{ loop.index0 * 0.06 }}s">
+        <div class="q-number">{{ loop.index }}</div>
+        <div class="q-text">{{ q.question }}</div>
+
+        <input type="hidden" name="question{{ q_index }}" value="{{ q.question }}">
+        <input type="hidden" name="correct{{ q_index }}"  value="{{ q.answer }}">
+        <input type="hidden" name="explanation{{ q_index }}" value="{{ q.explanation }}">
+
+        <div class="options" id="opts-{{ q_index }}">
+          {% for opt in q.options %}
+          <label class="option-label" onclick="selectOption(this, {{ q_index }})">
+            <input type="radio" name="q{{ q_index }}" value="{{ opt }}" required>
+            <div class="option-circle"><div class="option-dot"></div></div>
+            <span class="option-text">{{ opt }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+
+    <div class="submit-section">
+      <div class="answered-count">
+        <strong id="ans-count">0</strong> of {{ data.questions|length }} answered
+      </div>
+      <button type="submit" class="submit-btn">Submit Quiz →</button>
+    </div>
+  </form>
+
+</main>
+
+<script>
+  const totalTime = {{ time_limit }};
+  const totalQuestions = {{ data.questions|length }};
+  let timeLeft = totalTime;
+  let answeredCount = 0;
+
+  const timerEl   = document.getElementById('timer');
+  const fillEl    = document.getElementById('timer-fill');
+  const ansCount  = document.getElementById('ans-count');
+  const progInfo  = document.getElementById('progress-info');
+
+  // Init timer fill width
+  fillEl.style.width = '100%';
+
+  const timerInterval = setInterval(() => {
+    timeLeft--;
+    timerEl.textContent = timeLeft;
+
+    // Update progress bar
+    const pct = (timeLeft / totalTime) * 100;
+    fillEl.style.width = pct + '%';
+
+    // Color states
+    if (pct <= 20) {
+      fillEl.style.background = 'linear-gradient(90deg,#f87171,#f472b6)';
+      timerEl.className = 'timer-count danger';
+    } else if (pct <= 40) {
+      fillEl.style.background = 'linear-gradient(90deg,#fbbf24,#f97316)';
+      timerEl.className = 'timer-count warning';
+    }
+
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      document.getElementById('quiz-form').submit();
+    }
+  }, 1000);
+
+  function selectOption(label, qIndex) {
+    // Deselect siblings
+    const opts = document.querySelectorAll(`#opts-${qIndex} .option-label`);
+    let wasAnswered = false;
+    opts.forEach(l => {
+      if (l.classList.contains('selected')) wasAnswered = true;
+      l.classList.remove('selected');
+    });
+
+    // Select clicked
+    label.classList.add('selected');
+    label.querySelector('input[type="radio"]').checked = true;
+
+    // Mark card as answered
+    const card = document.getElementById(`qcard-${qIndex}`);
+    card.classList.add('answered');
+
+    // Update count
+    if (!wasAnswered) {
+      answeredCount++;
+      ansCount.textContent = answeredCount;
+      progInfo.innerHTML = `<strong>${answeredCount}</strong> / ${totalQuestions} answered`;
+    }
+  }
+</script>
+</body>
+</html>

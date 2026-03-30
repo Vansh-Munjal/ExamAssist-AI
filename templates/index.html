@@ -1,0 +1,424 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ExamAssist AI</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #060b18;
+    --surface: #0d1627;
+    --border: rgba(56, 189, 248, 0.12);
+    --accent: #38bdf8;
+    --accent2: #818cf8;
+    --accent3: #f472b6;
+    --text: #e2e8f0;
+    --muted: #64748b;
+  }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+    position: relative;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(56,189,248,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(56,189,248,0.04) 1px, transparent 1px);
+    background-size: 48px 48px;
+    animation: gridDrift 20s linear infinite;
+    pointer-events: none;
+  }
+
+  @keyframes gridDrift {
+    0% { background-position: 0 0; }
+    100% { background-position: 48px 48px; }
+  }
+
+  .orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(90px);
+    opacity: 0.18;
+    pointer-events: none;
+    animation: float 8s ease-in-out infinite;
+  }
+  .orb1 { width: 420px; height: 420px; background: var(--accent); top: -100px; left: -100px; animation-delay: 0s; }
+  .orb2 { width: 320px; height: 320px; background: var(--accent2); bottom: -80px; right: -60px; animation-delay: -3s; }
+  .orb3 { width: 200px; height: 200px; background: var(--accent3); top: 50%; left: 60%; animation-delay: -6s; }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px) scale(1); }
+    50% { transform: translateY(-30px) scale(1.05); }
+  }
+
+  nav {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 22px 40px;
+    border-bottom: 1px solid var(--border);
+    backdrop-filter: blur(12px);
+    background: rgba(6,11,24,0.6);
+  }
+
+  nav a {
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    text-decoration: none;
+    padding: 6px 14px;
+    border-radius: 20px;
+    transition: all 0.2s;
+    border: 1px solid transparent;
+  }
+  nav a:hover {
+    color: var(--accent);
+    border-color: var(--border);
+    background: rgba(56,189,248,0.06);
+  }
+  nav .sep { color: var(--border); font-size: 18px; }
+
+  main {
+    position: relative;
+    z-index: 5;
+    max-width: 640px;
+    margin: 0 auto;
+    padding: 60px 24px 80px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 52px;
+    animation: fadeUp 0.7s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    background: rgba(56,189,248,0.08);
+    border: 1px solid rgba(56,189,248,0.2);
+    padding: 6px 14px;
+    border-radius: 20px;
+    margin-bottom: 20px;
+  }
+  .badge span { font-size: 14px; }
+
+  h1 {
+    font-family: 'Syne', sans-serif;
+    font-size: clamp(2.4rem, 6vw, 3.4rem);
+    font-weight: 800;
+    line-height: 1.05;
+    letter-spacing: -0.03em;
+    margin-bottom: 14px;
+    background: linear-gradient(135deg, #e2e8f0 20%, var(--accent) 60%, var(--accent2) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .subtitle {
+    font-size: 15px;
+    color: var(--muted);
+    font-weight: 400;
+    line-height: 1.6;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 36px;
+    animation: fadeUp 0.7s 0.15s ease both;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.02), 0 24px 60px rgba(0,0,0,0.4);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(56,189,248,0.4), transparent);
+  }
+
+  .field-group {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 18px;
+  }
+
+  label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--muted);
+  }
+
+  input[type="text"],
+  input[type="number"],
+  select {
+    width: 100%;
+    padding: 12px 16px;
+    background: rgba(255,255,255,0.03);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+    appearance: none;
+    -webkit-appearance: none;
+  }
+
+  input::placeholder { color: #3d4f6e; }
+
+  input:focus, select:focus {
+    border-color: rgba(56,189,248,0.5);
+    background: rgba(56,189,248,0.04);
+    box-shadow: 0 0 0 3px rgba(56,189,248,0.08);
+  }
+
+  select {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%2364748b' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+    cursor: pointer;
+  }
+
+  .upload-zone {
+    border: 1.5px dashed rgba(56,189,248,0.2);
+    border-radius: 10px;
+    padding: 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    background: rgba(56,189,248,0.02);
+    position: relative;
+  }
+  .upload-zone:hover {
+    border-color: rgba(56,189,248,0.45);
+    background: rgba(56,189,248,0.05);
+  }
+  .upload-zone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+    width: 100%;
+    height: 100%;
+    border: none;
+    background: none;
+    padding: 0;
+  }
+  .upload-icon { font-size: 22px; margin-bottom: 6px; }
+  .upload-text { font-size: 13px; color: var(--muted); }
+  .upload-text strong { color: var(--accent); }
+
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  .difficulty-wrap { display: flex; gap: 8px; }
+  .diff-pill {
+    flex: 1;
+    padding: 10px 6px;
+    text-align: center;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid var(--border);
+    background: transparent;
+    color: var(--muted);
+    cursor: pointer;
+    transition: all 0.18s;
+    font-family: 'DM Sans', sans-serif;
+  }
+  .diff-pill:hover { border-color: rgba(56,189,248,0.3); color: var(--text); }
+  .diff-pill.active-easy  { background: rgba(74,222,128,0.1); border-color: rgba(74,222,128,0.4); color: #4ade80; }
+  .diff-pill.active-medium { background: rgba(251,191,36,0.1); border-color: rgba(251,191,36,0.4); color: #fbbf24; }
+  .diff-pill.active-hard  { background: rgba(248,113,113,0.1); border-color: rgba(248,113,113,0.4); color: #f87171; }
+
+  .divider { height: 1px; background: var(--border); margin: 24px 0; }
+
+  .submit-btn {
+    width: 100%;
+    padding: 15px;
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+    border: none;
+    border-radius: 12px;
+    color: #060b18;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+    margin-top: 8px;
+  }
+  .submit-btn::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15) 0%, transparent 60%);
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+  .submit-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(56,189,248,0.35); }
+  .submit-btn:hover::before { opacity: 1; }
+  .submit-btn:active { transform: translateY(0); }
+
+  .loading-bar { display: none; margin-top: 18px; text-align: center; }
+  .loading-bar.visible { display: block; }
+  .loading-text { font-size: 13px; color: var(--accent); margin-bottom: 10px; animation: pulse 1.5s ease infinite; }
+  @keyframes pulse { 0%,100% { opacity:1; } 50% { opacity:0.4; } }
+  .progress-track { height: 2px; background: rgba(56,189,248,0.1); border-radius: 2px; overflow: hidden; }
+  .progress-fill {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    border-radius: 2px;
+    animation: progressAnim 2.5s ease forwards;
+  }
+  @keyframes progressAnim { to { width: 85%; } }
+</style>
+</head>
+<body>
+
+<div class="orb orb1"></div>
+<div class="orb orb2"></div>
+<div class="orb orb3"></div>
+
+<nav>
+  <a href="/">Home</a>
+  <span class="sep">·</span>
+  <a href="/history">History</a>
+</nav>
+
+<main>
+  <div class="header">
+    <div class="badge"><span>🧠</span> AI-Powered</div>
+    <h1>ExamAssist AI</h1>
+    <p class="subtitle">Generate smart quizzes from any topic or PDF.<br>Study smarter, not harder.</p>
+  </div>
+
+  <div class="card">
+    <form action="/generate" method="post" enctype="multipart/form-data" id="quiz-form">
+      <input type="hidden" name="difficulty" id="hidden-difficulty" value="medium">
+
+      <div class="field-group">
+        <label>Topic</label>
+        <input type="text" name="topic" placeholder="e.g. Photosynthesis, World War II, Calculus…">
+      </div>
+
+      <div class="field-group">
+        <label>Upload PDF <span style="color:#3d4f6e;font-weight:400;text-transform:none;letter-spacing:0">(optional)</span></label>
+        <div class="upload-zone" id="upload-zone">
+          <input type="file" name="pdf_file" accept=".pdf" id="pdf-input" onchange="handleFile(this)">
+          <div id="upload-default">
+            <div class="upload-icon">📄</div>
+            <div class="upload-text">Drop PDF here or <strong>browse</strong></div>
+          </div>
+          <div id="upload-selected" style="display:none;">
+            <div class="upload-icon">✅</div>
+            <div class="upload-text" id="file-name-display"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="field-group">
+        <label>Difficulty</label>
+        <div class="difficulty-wrap">
+          <button type="button" class="diff-pill" data-level="easy" onclick="setDifficulty('easy')">Easy</button>
+          <button type="button" class="diff-pill" data-level="medium" onclick="setDifficulty('medium')">Medium</button>
+          <button type="button" class="diff-pill" data-level="hard" onclick="setDifficulty('hard')">Hard</button>
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field-group" style="margin-bottom:0">
+          <label>Questions</label>
+          <input type="number" name="num_questions" placeholder="1–30" min="1" max="30" required>
+        </div>
+        <div class="field-group" style="margin-bottom:0">
+          <label>Time Limit (sec)</label>
+          <input type="number" name="time_limit" placeholder="e.g. 300" min="10" required>
+        </div>
+      </div>
+
+      <button type="submit" class="submit-btn" onclick="showLoading()">
+        Generate Quiz →
+      </button>
+
+      <div class="loading-bar" id="loading-bar">
+        <div class="loading-text">⏳ Generating your quiz…</div>
+        <div class="progress-track"><div class="progress-fill"></div></div>
+      </div>
+    </form>
+  </div>
+</main>
+
+<script>
+  setDifficulty('medium');
+
+  function setDifficulty(level) {
+    document.getElementById('hidden-difficulty').value = level;
+    document.querySelectorAll('.diff-pill').forEach(p => {
+      p.className = 'diff-pill';
+      if (p.dataset.level === level) p.classList.add('active-' + level);
+    });
+  }
+
+  function handleFile(input) {
+    if (input.files && input.files[0]) {
+      document.getElementById('upload-default').style.display = 'none';
+      document.getElementById('upload-selected').style.display = 'block';
+      document.getElementById('file-name-display').innerHTML =
+        `<strong>${input.files[0].name}</strong>`;
+    }
+  }
+
+  function showLoading() {
+    const bar = document.getElementById('loading-bar');
+    bar.classList.add('visible');
+    const fill = bar.querySelector('.progress-fill');
+    fill.style.animation = 'none';
+    fill.offsetHeight;
+    fill.style.animation = '';
+  }
+</script>
+</body>
+</html>
