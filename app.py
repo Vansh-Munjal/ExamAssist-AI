@@ -40,7 +40,7 @@ def generate():
 
     time_limit = int(request.form.get('time_limit', 60))
 
-    pdf_file = request.files.get('pdf_file')
+    pdf_file = request.files.get('pdf_file', None)
 
     extracted_text = ""
 
