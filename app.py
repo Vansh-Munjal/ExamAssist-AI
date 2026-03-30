@@ -104,7 +104,11 @@ def submit():
             if not user_ans:
                 user_ans = "Not Attempted"
 
-            if user_ans == correct_ans:
+            # 🔥 NORMALIZATION FIX
+            user_clean = (user_ans or "").strip().lower()
+            correct_clean = (correct_ans or "").strip().lower()
+
+            if user_clean == correct_clean:
                 score += 1
                 status = "Correct"
             else:
