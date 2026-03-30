@@ -100,15 +100,37 @@ def generate_mcq(topic, num_questions):
                 # 🔥 FIX ANSWERS
                 for q in data.get("questions", []):
 
-                    # Convert A/B/C/D → actual option
+                    options = q.get("options", [])
+
+                    # 🔥 Case 1: A/B/C/D
                     if q.get("answer") in ["A", "B", "C", "D"]:
                         idx = ["A", "B", "C", "D"].index(q["answer"])
-                        q["answer"] = q["options"][idx]
+                        if idx < len(options):
+                            q["answer"] = options[idx]
 
-                    # Handle numeric correct_answer
+                    # 🔥 Case 2: "Option A", "Answer: B"
+                    elif isinstance(q.get("answer"), str):
+                        ans = q["answer"].strip().upper()
+
+                        for letter in ["A", "B", "C", "D"]:
+                            if letter in ans:
+                                idx = ["A", "B", "C", "D"].index(letter)
+                                if idx < len(options):
+                                    q["answer"] = options[idx]
+                                break
+
+                    # 🔥 Case 3: numeric correct_answer
                     if "correct_answer" in q:
-                        idx = int(q["correct_answer"]) - 1
-                        q["answer"] = q["options"][idx]
+                        try:
+                            idx = int(q["correct_answer"]) - 1
+                            if idx < len(options):
+                                q["answer"] = options[idx]
+                        except:
+                            pass
+
+                    # 🔥 FINAL SAFETY
+                    if q.get("answer") not in options and options:
+                        q["answer"] = options[0]
 
                     # Ensure explanation exists
                     if "explanation" not in q:

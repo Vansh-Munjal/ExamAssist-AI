@@ -21,13 +21,6 @@ class QuizHistory(db.Model):
 # 🔥 THEN CREATE TABLE
 with app.app_context():
     db.create_all()
-    
-# 🔹 Model (History Table)
-class QuizHistory(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    topic = db.Column(db.String(200))
-    score = db.Column(db.Integer)
-    total = db.Column(db.Integer)
 
 # 🔹 Home Page
 @app.route('/')
